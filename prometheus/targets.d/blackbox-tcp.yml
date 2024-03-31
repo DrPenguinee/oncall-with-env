@@ -1,0 +1,4 @@
+- targets:
+  - oncall:8080
+  labels:
+    alias: tcp-connect

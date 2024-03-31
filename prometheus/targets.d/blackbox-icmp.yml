@@ -1,0 +1,6 @@
+- targets:
+  - oncall
+  - oncall-1
+  - oncall-2
+  labels:
+    alias: ping

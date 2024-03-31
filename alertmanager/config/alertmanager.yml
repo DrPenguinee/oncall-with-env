@@ -1,0 +1,52 @@
+global:
+  resolve_timeout: 5m
+  telegram_api_url: "https://api.telegram.org"
+
+templates:
+  - '/etc/alertmanager/*.tmpl'
+
+receivers:
+  - name: blackhole
+  - name: telegram-critical
+    telegram_configs:
+      - chat_id: -1002031215894
+        bot_token: 6594103392:AAErDfE-vW6YRGzVR0Xgq9c0XFvKSViELM0
+        api_url: "https://api.telegram.org"
+        send_resolved: true
+        parse_mode: HTML
+        message: '{{ template "telegram.default" . }}'
+  - name: telegram-warning
+    telegram_configs:
+    - chat_id: -1001909256755
+      bot_token: 6594103392:AAErDfE-vW6YRGzVR0Xgq9c0XFvKSViELM0
+      api_url: "https://api.telegram.org"
+      send_resolved: true
+      parse_mode: HTML
+      message: '{{ template "telegram.default" . }}'
+
+
+route:
+  group_by: ['alertname']
+  group_wait: 15s
+  group_interval: 30s
+  repeat_interval: 12h
+  receiver: blackhole
+  routes:
+  - receiver: telegram-critical
+    matchers:
+      - severity="critical"
+  - receiver: telegram-warning
+    matchers:
+      - severity="warning"
+    mute_time_intervals:
+      - weekend
+
+time_intervals:
+  - name: 'workhours'
+    time_intervals:
+      - weekdays: ['monday:friday']
+      - location: Europe/Moscow
+  - name: 'weekend'
+    time_intervals:
+      - weekdays: ['saturday', 'sunday']
+      - location: Europe/Moscow

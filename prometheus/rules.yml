@@ -1,0 +1,17 @@
+groups:
+  - name: oncall
+    rules:
+    - alert: MySQL down
+      expr: mysql_health_status{mysql_health_status="healthy"} < 1
+      for: 15s
+      labels:
+        severity: critical
+      annotations:
+        summary: "MySQL down"
+    - alert: Teams number is zero
+      expr: teams_num_non_zero{teams_num_non_zero="true"} < 1
+      for: 15s
+      labels:
+        severity: warning
+      annotations:
+        summary: "Teams number in oncall is zero"

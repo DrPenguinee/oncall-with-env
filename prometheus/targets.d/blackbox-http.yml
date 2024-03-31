@@ -1,0 +1,4 @@
+- targets:
+  - http://oncall:8080/api/v0/teams
+  labels:
+    alias: http

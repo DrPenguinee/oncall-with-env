@@ -1,0 +1,224 @@
+version: '3'
+
+volumes:
+    prometheus_data: {}
+    grafana_data: {}
+
+services:
+  nginx:
+    image: nginx
+    container_name: oncall
+    hostname: oncall
+    volumes:
+      - ./configs/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+    restart: always
+    ports:
+      - 8080:8080
+    networks:
+      - iris
+
+  oncall-1:
+    build: .
+    container_name: oncall-1
+    hostname: oncall-1
+    environment:
+      - DOCKER_DB_BOOTSTRAP=1
+      - IRIS_API_HOST=iris
+    restart: always
+    volumes:
+      - ./configs/config.docker.yaml:/home/oncall/config/config.yaml
+      - ./logs/instance_1/:/home/oncall/var/log/
+    ports:
+      - 8081:8080
+    networks:
+      - iris
+
+  oncall-2:
+    build: .
+    container_name: oncall-2
+    hostname: oncall-2
+    environment:
+      - DOCKER_DB_BOOTSTRAP=1
+      - IRIS_API_HOST=iris
+    restart: always
+    volumes:
+      - ./configs/config.docker.yaml:/home/oncall/config/config.yaml
+      - ./logs/instance_2/:/home/oncall/var/log/
+    ports:
+      - 8082:8080
+    networks:
+      - iris
+  
+  oncall-mysql:
+    container_name: oncall-mysql
+    hostname: oncall-mysql
+    image: mysql:5.7
+    environment:
+      - MYSQL_ROOT_PASSWORD=1234
+    networks:
+      - iris
+
+#  grafana:
+#    image: grafana/grafana
+#    container_name: grafana
+#    ports:
+#      - 3000:3000
+#    volumes:
+#      - grafana_data:/var/lib/grafana
+#    networks:
+#      - iris
+#
+#  prometheus:
+#    image: prom/prometheus:v2.36.2
+#    container_name: prometheus
+#    volumes:
+#      - ./prometheus/:/etc/prometheus/
+#      - prometheus_data:/prometheus
+#    command:
+#      - '--config.file=/etc/prometheus/prometheus.yml'
+#      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+#      - '--web.console.templates=/usr/share/prometheus/consoles'
+#    ports:
+#      - 9090:9090
+#    networks:
+#      - iris
+#    restart: always
+#
+#  alertmanager:
+#    image: prom/alertmanager
+#    container_name: alertmanager
+#    hostname: alertmanager
+#    volumes:
+#      - ./alertmanager:/alertmanager/data
+#      - ./alertmanager/config:/etc/alertmanager/
+#    command:
+#      - '--config.file=/etc/alertmanager/alertmanager.yml'
+#    ports:
+#      - 9093:9093
+#    networks:
+#      - iris
+#
+#  blackbox_exporter:
+#    image: prom/blackbox-exporter
+#    container_name: blackbox
+#    hostname: blackbox
+#    ports:
+#      - 9115:9115
+#    restart: always
+#    volumes:
+#      - "./blackbox:/config"
+#    command: '--config.file=/config/blackbox.yml'
+#    networks:
+#      - iris
+#
+#  node_exporter:
+#    image: quay.io/prometheus/node-exporter:latest
+#    container_name: node_exporter
+#    volumes:
+#      - /:/rootfs:ro
+#      - /var/run:/var/run:rw
+#      - /sys:/sys:ro
+#      - /var/lib/docker/:/var/lib/docker:ro
+#    command:
+#      - '--no-collector.powersupplyclass'
+#      - '--no-collector.mdadm'
+#      - '--no-collector.hwmon'
+#      - '--no-collector.textfile'
+#    ports:
+#      - 9100:9100
+#    networks:
+#      - iris
+#    restart: always
+#    deploy:
+#      mode: global
+#
+#  custom_exporter:
+#    build: ./custom_exporter
+#    container_name: custom_exporter
+#    environment:
+#      - MYSQL_HOST=oncall-mysql
+#      - MYSQL_DB=oncall
+#      - MYSQL_USER=root
+#      - MYSQL_PASS=1234
+#    ports:
+#      - 9000:9000
+#    networks:
+#      - iris
+#    restart: always
+#    depends_on:
+#      - nginx
+#
+#  nginx_exporter:
+#    image: nginx/nginx-prometheus-exporter:latest
+#    container_name: nginx_exporter
+#    hostname: nginx_exporter
+#    command:
+#      - '--nginx.scrape-uri=http://nginx:8080/basic_status'
+#    ports:
+#      - 9113:9113
+#    networks:
+#      - iris
+#
+#  beats:
+#    image: elastic/filebeat:7.16.2
+#    volumes:
+#      - ./configs/filebeat/config.yml:/usr/share/filebeat/filebeat.yml:ro
+#      - ./logs/:/oncall_logs/:ro
+#    networks:
+#      - iris
+#    depends_on:
+#      - elasticsearch
+#      - oncall-1
+#      - oncall-2
+#
+#  elasticsearch:
+#    image: elasticsearch:7.16.1
+#    container_name: elasticsearch
+#    hostname: elasticsearch
+#    volumes:
+#      - ./configs/elasticsearch/config.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
+#      - ./docker_volumes/elasticsearch/data:/usr/share/elasticsearch/data
+#    environment:
+#      ES_JAVA_OPTS: "-Xmx512m -Xms512m"
+#      ELASTIC_USERNAME: "elastic"
+#      ELASTIC_PASSWORD: "MyPw123"
+#      discovery.type: single-node
+#    networks:
+#      - iris
+#    ports:
+#      - "9200:9200"
+#      - "9300:9300"
+#
+#  logstash:
+#    hostname: logstash
+#    image: logstash:7.16.2
+#    volumes:
+#      - ./configs/logstash/config.yml:/usr/share/logstash/config/logstash.yml:ro
+#      - ./configs/logstash/pipelines.yml:/usr/share/logstash/config/pipelines.yml:ro
+#      - ./configs/logstash/pipelines:/usr/share/logstash/config/pipelines:ro
+#    environment:
+#      LS_JAVA_OPTS: "-Xmx512m -Xms512m"
+#    ports:
+#      - "5044:5044"
+#      - "5000:5000"
+#      - "9600:9600"
+#    networks:
+#      - iris
+#    depends_on:
+#      - elasticsearch
+#
+#  kibana:
+#    image: kibana:7.16.1
+#    depends_on:
+#      - elasticsearch
+#    volumes:
+#      - ./configs/kibana/config.yml:/usr/share/kibana/config/kibana.yml:ro
+#    networks:
+#      - iris
+#    ports:
+#      - "5601:5601"
+
+
+networks:
+  iris:
+    name: iris

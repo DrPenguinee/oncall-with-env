@@ -1,0 +1,11 @@
+filebeat.inputs:
+  - type: log
+    enabled: true
+    paths:
+      - /oncall_logs/instance_1/uwsgi/access.log
+      - /oncall_logs/instance_2/uwsgi/access.log
+    fields:
+      service: oncall
+
+output.logstash:
+  hosts: ["logstash:5044"]
